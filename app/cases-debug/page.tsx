@@ -7,7 +7,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle, XCircle, AlertCircle, Database, Key, FileText, RefreshCwIcon as Refresh } from "lucide-react"
+import {
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Database,
+  Key,
+  FileText,
+  RefreshCw as Refresh,
+} from "lucide-react"
 
 interface DebugResult {
   success: boolean
