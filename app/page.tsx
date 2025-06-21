@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Navigation from "@/components/navigation"
 import BackToTop from "@/components/back-to-top"
 import Footer from "@/components/footer"
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { X } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { getCaseProjects, type CaseCardProject } from "@/lib/notion-cases-client"
 
 // Project Card Component
 function ProjectCard({ project, className = "" }: { project: any; className?: string }) {
@@ -45,94 +46,13 @@ function ProjectCard({ project, className = "" }: { project: any; className?: st
 }
 
 // Three Column Works Section Component
-function ThreeColumnWorksSection({ activeFilters }: { activeFilters: string[] }) {
-  const projects = [
-    {
-      title: "MAITREYA, LOGO DESIGN, IDENTITY, PACKAGING",
-      image: "/placeholder.svg?height=150&width=200",
-      height: "300px",
-      categories: ["IDENTITY", "PACKAGING"],
-      slug: "maitreya-logo-design",
-    },
-    {
-      title: "DERZHSTAT, IDENTITY",
-      image: "/placeholder.svg?height=125&width=200",
-      height: "300px",
-      categories: ["IDENTITY"],
-      slug: "derzhstat-identity",
-    },
-    {
-      title: "CRIMES WITHOUT PUNISHMENT, 3D VISUALISATION",
-      image: "/placeholder.svg?height=175&width=200",
-      height: "300px",
-      categories: ["3D VISUALISATION"],
-      slug: "crimes-without-punishment",
-    },
-    {
-      title: "BICKERSTAFF, IDENTITY, CREATIVE CODING",
-      image: "/placeholder.svg?height=140&width=200",
-      height: "300px",
-      categories: ["IDENTITY", "CREATIVE CODING"],
-      slug: "bickerstaff-identity",
-    },
-    {
-      title: "BIRDING VISION, 3D VISUALISATION",
-      image: "/placeholder.svg?height=160&width=200",
-      height: "300px",
-      categories: ["3D VISUALISATION"],
-      slug: "birding-vision",
-    },
-    {
-      title: "FRESH BLACK COLD BREW, PACKAGING",
-      image: "/placeholder.svg?height=150&width=200",
-      height: "300px",
-      comingSoon: true,
-      categories: ["PACKAGING"],
-      slug: "fresh-black-cold-brew",
-    },
-    {
-      title: "GALYCHYNA, PACKAGING",
-      image: "/placeholder.svg?height=140&width=200",
-      height: "300px",
-      categories: ["PACKAGING"],
-      slug: "galychyna-packaging",
-    },
-    {
-      title: "LEZO, FONT DESIGN",
-      image: "/placeholder.svg?height=175&width=200",
-      height: "300px",
-      categories: ["IDENTITY"],
-      slug: "lezo-font-design",
-    },
-    {
-      title: "ETNODIM, 3D VISUALISATION, CLOTH SIMULATION",
-      image: "/placeholder.svg?height=150&width=200",
-      height: "300px",
-      categories: ["3D VISUALISATION"],
-      slug: "etnodim-3d-visualisation",
-    },
-    {
-      title: "GALYCHYNA, VISUALS",
-      image: "/placeholder.svg?height=160&width=200",
-      height: "300px",
-      categories: ["IDENTITY"],
-      slug: "galychyna-visuals",
-    },
-    {
-      title: "PEN INK, PACKAGING",
-      image: "/placeholder.svg?height=145&width=200",
-      height: "300px",
-      categories: ["PACKAGING"],
-      slug: "pen-ink-packaging",
-    },
-    {
-      title: "BRAND UKRAINE, IDENTITY",
-      image: "/placeholder.svg?height=155&width=200",
-      height: "300px",
-      categories: ["IDENTITY"],
-      slug: "brand-ukraine-identity",
-    },
-  ]
+function ThreeColumnWorksSection({
+  projects,
+  activeFilters,
+}: {
+  projects: CaseCardProject[]
+  activeFilters: string[]
+}) {
 
   // Filter projects based on active filters
   const filteredProjects =
@@ -198,8 +118,24 @@ function ThreeColumnWorksSection({ activeFilters }: { activeFilters: string[] })
 
 export default function Home() {
   const [activeFilters, setActiveFilters] = useState<string[]>([])
+  const [projects, setProjects] = useState<CaseCardProject[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filterCategories = ["PACKAGING", "IDENTITY", "3D VISUALISATION", "CREATIVE CODING"]
+  const filterCategories = Array.from(
+    new Set(projects.flatMap((p) => p.categories)),
+  )
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await getCaseProjects()
+        setProjects(data)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
 
   const toggleFilter = (filter: string) => {
     setActiveFilters((prev) => (prev.includes(filter) ? prev.filter((f) => f !== filter) : [...prev, filter]))
@@ -207,6 +143,14 @@ export default function Home() {
 
   const clearFilters = () => {
     setActiveFilters([])
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="text-gray-600">Loading projects...</p>
+      </div>
+    )
   }
 
   return (
@@ -351,7 +295,7 @@ export default function Home() {
         </div>
 
         {/* Three Column Works Section */}
-        <ThreeColumnWorksSection activeFilters={activeFilters} />
+        <ThreeColumnWorksSection projects={projects} activeFilters={activeFilters} />
 
         {/* Footer Section */}
         <Footer />

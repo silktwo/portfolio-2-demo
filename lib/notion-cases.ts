@@ -124,78 +124,19 @@ export async function getCaseBySlug(slug: string): Promise<CaseProject | null> {
   try {
     console.log(`🔍 Fetching case project by slug: ${slug}`)
 
-    const notion = new Client({
-      auth: process.env.CASES_TOKEN,
-    })
+    // Reuse the getCaseProjects function to fetch all published projects
+    const result = await getCaseProjects()
 
-    const response = await notion.databases.query({
-      database_id: process.env.CASES_DATABASE_ID!,
-      filter: {
-        and: [
-          {
-            property: "Slug",
-            rich_text: {
-              equals: slug,
-            },
-          },
-          {
-            property: "publish",
-            checkbox: {
-              equals: true,
-            },
-          },
-        ],
-      },
-    })
-
-    if (response.results.length === 0) {
-      console.log(`❌ No published project found with slug: ${slug}`)
+    if (!result.success) {
+      console.error(`❌ Failed to fetch projects: ${result.error || "Unknown error"}`)
       return null
     }
 
-    const page = response.results[0] as any
-    const properties = page.properties
+    const project = result.data.find((p) => p.slug === slug)
 
-    // Helper function to extract text from rich text
-    const getRichText = (richTextArray: any[]) => {
-      return richTextArray?.map((text: any) => text.plain_text).join("") || ""
-    }
-
-    // Helper function to extract files
-    const getFiles = (filesArray: any[]) => {
-      return (
-        filesArray
-          ?.map((file: any) => {
-            if (file.type === "file") {
-              return file.file.url
-            } else if (file.type === "external") {
-              return file.external.url
-            }
-            return ""
-          })
-          .filter(Boolean) || []
-      )
-    }
-
-    // Helper function to extract multi-select
-    const getMultiSelect = (multiSelectArray: any[]) => {
-      return multiSelectArray?.map((item: any) => item.name) || []
-    }
-
-    const project: CaseProject = {
-      id: page.id,
-      projectTitle: properties["projectTitle"]?.title?.[0]?.plain_text || "",
-      slug: generateSlugFromTitle(properties["projectTitle"]?.title?.[0]?.plain_text || ""),
-      description: getRichText(properties["description"]?.rich_text || []),
-      team: getRichText(properties["team"]?.rich_text || []),
-      categoryTags: getMultiSelect(properties["categoryTags"]?.multi_select || []),
-      thumbnail: getFiles(properties["thumbnail"]?.files || [])[0] || "",
-      introImage: getFiles(properties["introImage"]?.files || [])[0] || "",
-      projectMedia: getFiles(properties["projectMedia"]?.files || []),
-      draftProcess: getFiles(properties["draftProcess"]?.files || []),
-      publish: properties["publish"]?.checkbox || false,
-      comingSoon: properties["comingSoon"]?.checkbox || false,
-      link: properties["link"]?.url || "", // Optional field
+    if (!project) {
+      console.log(`❌ No published project found with slug: ${slug}`)
+      return null
     }
 
     console.log(`✅ Found project: ${project.projectTitle}`)
