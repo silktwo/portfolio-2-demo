@@ -7,17 +7,28 @@ export async function GET() {
 
     const result = await getCaseProjects()
 
-    console.log("📊 Cases API result:", {
-      success: result.success,
-      count: result.metadata.count,
-      errors: result.metadata.errors.length,
-      warnings: result.metadata.warnings.length,
-    })
+    const metadata = {
+      count: result.data.length,
+      errors: result.error ? [result.error] : [],
+      warnings: [] as string[],
+      debugInfo: {
+        token: process.env.CASES_TOKEN ? "CASES_TOKEN" : undefined,
+        databaseId: process.env.CASES_DATABASE_ID,
+      },
+    }
 
-    return NextResponse.json(result, { status: 200 })
+    console.log("📊 Cases API result:", metadata)
+
+    return NextResponse.json(
+      {
+        success: result.success,
+        data: result.data,
+        metadata,
+      },
+      { status: 200 },
+    )
   } catch (error) {
     console.error("❌ Cases API route error:", error)
-
     return NextResponse.json(
       {
         success: false,
